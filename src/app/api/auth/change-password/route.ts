@@ -44,3 +44,9 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+
+// GET: Debug headers
+export async function GET(request: NextRequest) {
+  const headers = request.headers;
+  return NextResponse.json({ headers: Object.fromEntries(headers) });
+}
