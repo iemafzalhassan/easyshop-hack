@@ -1,0 +1,135 @@
+---
+- name: Install Jenkins on EC2
+  hosts: jenkins
+  become: true
+
+  vars:
+    java_package: openjdk-17-jdk
+    jenkins_repo_url: https://pkg.jenkins.io/debian-stable
+    jenkins_key_url: https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
+
+  tasks:
+
+  - name: Update APT cache
+    apt:
+      update_cache: yes
+
+  - name: Install Java 17
+    apt:
+      name: "{{ java_package }}"
+      state: present
+
+  - name: Add Jenkins APT key
+    apt_key:
+      url: "{{ jenkins_key_url }}"
+      state: present
+
+  - name: Add Jenkins repository
+    apt_repository:
+      repo: "deb {{ jenkins_repo_url }} binary/"
+      state: present
+
+  - name: Update APT cache after adding Jenkins repo
+    apt:
+      update_cache: yes
+
+  - name: Install Jenkins
+    apt:
+      name: jenkins
+      state: present
+
+  - name: Set JAVA_HOME in Jenkins default file
+    lineinfile:
+      path: /etc/default/jenkins
+      regexp: '^JAVA_HOME='
+      line: 'JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64'
+
+  - name: Restart Jenkins
+    systemd:
+      name: jenkins
+      state: restarted
+      enabled: yes
+
+  - name: Wait for Jenkins to start
+    wait_for:
+      port: 8080
+      timeout: 30
+
+  - name: Display public IP for Jenkins access
+    shell: curl -s http://169.254.169.254/latest/meta-data/public-ipv4
+    register: ec2_ip
+
+  - name: Print Jenkins URL
+    debug:
+      msg: "Jenkins is running at: http://{{ ec2_ip.stdout }}:8080"
+
+   ########################################################################
+  #                     INSTALL DOCKER, K8s, ETC                         #
+  ########################################################################
+
+  - name: Install Docker
+    apt:
+      name: docker.io
+      state: present
+      update_cache: yes
+
+  - name: Add current user to docker group
+    user:
+      name: "{{ ansible_user }}"
+      groups: docker
+      append: yes
+
+  - name: Add Jenkins user to docker group
+    user:
+      name: jenkins
+      groups: docker
+      append: yes
+
+  - name: Restart Docker service
+    systemd:
+      name: docker
+      state: restarted
+      enabled: yes
+
+  - name: Install Trivy
+    shell: |
+      curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+    args:
+      creates: /usr/local/bin/trivy
+
+  - name: Install kind (Kubernetes in Docker)
+    when: ansible_architecture == "x86_64"
+    block:
+      - name: Download kind binary
+        get_url:
+          url: https://kind.sigs.k8s.io/dl/v0.27.0/kind-linux-amd64
+          dest: /usr/local/bin/kind
+          mode: '0755'
+
+  - name: Install kubectl
+    block:
+      - name: Set kubectl version
+        set_fact:
+          kubectl_version: v1.30.0
+
+      - name: Download kubectl binary
+        get_url:
+          url: "https://dl.k8s.io/release/{{ kubectl_version }}/bin/linux/amd64/kubectl"
+          dest: /usr/local/bin/kubectl
+          mode: '0755'
+
+      - name: Verify kubectl installation
+        command: kubectl version --client=true --output=yaml
+        register: kubectl_out
+        ignore_errors: true
+
+      - debug:
+          var: kubectl_out.stdout
+
+
+  - name: Install Helm
+    shell: |
+      curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+    args:
+      creates: /usr/local/bin/helm   
+        
