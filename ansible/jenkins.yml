@@ -55,6 +55,15 @@
       port: 8080
       timeout: 30
 
+  - name: Display Jenkins initial admin password
+    shell: cat /var/lib/jenkins/secrets/initialAdminPassword
+    register: jenkins_password
+
+  - name: Show Jenkins initial admin password
+    debug:
+      msg: "🔑 Jenkins Unlock Key: {{ jenkins_password.stdout }}"
+    
+
   - name: Display public IP for Jenkins access
     shell: curl -s http://169.254.169.254/latest/meta-data/public-ipv4
     register: ec2_ip
