@@ -115,3 +115,6 @@ secrets.tfvars
 # CLI configuration files
 .terraformrc
 terraform.rc
+
+.Dev-hack
+.Dev-hack.pub

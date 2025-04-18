@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: easy-mongodb-service
+  namespace: easyshop-hack
+  labels:
+    name: easy-mongodb-service
+    environment: production
+spec:
+  ports:
+    - port: 27017
+      targetPort: 27017
+  selector:
+    app: mongodb-easy-app
