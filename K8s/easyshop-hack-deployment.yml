@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
         - name: app-easyshop-hack
-          image: devshubh2204/easyshop-hack_app:latest
+          image: devshubh2204/easyshop-hack_app:15
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
