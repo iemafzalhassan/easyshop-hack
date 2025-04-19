@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: easyshop-config
+  namespace: easyshop-hack
+  labels:
+    name: easyshop-config
+    environment: production
+data:
+  MONGODB_URI: "mongodb://mongodb-service:27017/easyshop"
+  NODE_ENV: "production"
+  NEXT_PUBLIC_API_URL: "https://easyshop.letsdeployit.com/api"
+  NEXTAUTH_URL: "https://easyshop.letsdeployit.com/"
+  NEXTAUTH_SECRET:5qPVUV2ehy9k73xQoVL4xUXrMO7cyIrCyKpdoQsDbQ0=
+  JWT_SECRET:d2c0f65275db8d4fb39f2dfdf14cd963777db691c5b57037badf68d4e995aab4

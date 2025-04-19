@@ -1,0 +1,31 @@
+# -------- Stage 1: Base Build --------
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Install dependencies
+COPY package.json package-lock.json* ./
+RUN npm install
+
+# Copy source code
+COPY tsconfig.json ./
+COPY scripts/ ./scripts/
+COPY src/ ./src/
+
+# -------- Stage 2: Runtime --------
+FROM node:20-alpine
+
+# Create non-root user and group
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+WORKDIR /app
+
+# Copy dependencies and source
+COPY --from=builder /app /app
+
+# Use non-root user
+USER appuser
+
+# Default command to run the migration script
+CMD ["npx", "ts-node", "--project", "scripts/tsconfig.json", "scripts/migrate-data.ts"]
+
